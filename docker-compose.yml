@@ -1,0 +1,44 @@
+services:
+  db:
+    image: mariadb:10.6
+    container_name: gamelogger-db
+    restart: unless-stopped
+    environment:
+      MARIADB_DATABASE: ${DB_NAME:-gamelogger}
+      MARIADB_USER: ${DB_USER:-gamelogger}
+      MARIADB_PASSWORD: ${DB_PASSWORD:-gamelogger}
+      MARIADB_ROOT_PASSWORD: ${DB_ROOT_PASSWORD:-rootpassword}
+    ports:
+      - "${DB_PORT:-3306}:3306"
+    volumes:
+      - db-data:/var/lib/mysql
+      # Schema is applied automatically on first startup (empty data volume only).
+      - ./server/createTables.sql:/docker-entrypoint-initdb.d/01-createTables.sql:ro
+    healthcheck:
+      test: ["CMD", "healthcheck.sh", "--connect", "--innodb_initialized"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+
+  web:
+    build:
+      context: .
+      dockerfile: docker/php/Dockerfile
+    container_name: gamelogger-web
+    restart: unless-stopped
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      DB_HOST: db
+      DB_NAME: ${DB_NAME:-gamelogger}
+      DB_USER: ${DB_USER:-gamelogger}
+      DB_PASSWORD: ${DB_PASSWORD:-gamelogger}
+    ports:
+      - "${WEB_PORT:-8090}:80"
+    volumes:
+      # Live-mount the server source for development (edit-and-refresh).
+      - ./server:/var/www/html
+
+volumes:
+  db-data:
