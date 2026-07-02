@@ -31,7 +31,6 @@ void GameLog::update(int apm)
 
     for ( i = 0; i < cProcesses; i++ ) {
         if( aProcesses[i] != 0 ) {
-            QDEBUG("[GameLog::update()] checking process %d",i);
             TCHAR szProcessName[MAX_PATH] = TEXT("<unknown>");
 
             // Get a handle to the process.
@@ -39,16 +38,12 @@ void GameLog::update(int apm)
 
             // Get the process name.
             if (NULL != hProcess ) {
-                QDEBUG("[GameLog::update()] obtained handle for process %d",i);
-
                 PDWORD len = &temp;
                 *len = sizeof(szProcessName)/sizeof(TCHAR);
-                QueryFullProcessImageNameW(hProcess, 0, szProcessName, len);                
-                QDEBUG("[GameLog::update()] found process image name for process %d with %d length",i,*len);
+                QueryFullProcessImageNameW(hProcess, 0, szProcessName, len);
 
                 QString processName = QString::fromWCharArray(szProcessName);
                 processName = processName.mid(processName.lastIndexOf('\\')+1).toLower();
-                QDEBUG("[GameLog::update()] found process %s",qPrintable(processName));
 
                 if (settings->games.contains(processName)) {
                     QDEBUG("[GameLog::update()] found game %s", qPrintable(processName));

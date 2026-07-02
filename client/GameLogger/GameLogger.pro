@@ -12,18 +12,14 @@ greaterThan(QT_MAJOR_VERSION, 4): QT += widgets
 TARGET = GameLogger
 TEMPLATE = app
 
-debug {
-
-#    DEFINES += MY_DEBUG
-}
-
 SOURCES += main.cpp\
     networkhandler.cpp \
     gameloggerui.cpp \
     settings.cpp \
     apmlog.cpp \
     gamelog.cpp \
-    gamelogger.cpp
+    gamelogger.cpp \
+    logbuffer.cpp
 
 HEADERS  += \
     networkhandler.h \
@@ -33,7 +29,8 @@ HEADERS  += \
     apmlog.h \
     gamelog.h \
     session.h \
-    gamelogger.h
+    gamelogger.h \
+    logbuffer.h
 
 FORMS    += \
     gameloggerui.ui

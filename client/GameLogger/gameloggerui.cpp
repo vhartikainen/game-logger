@@ -6,9 +6,11 @@
 #include <QAction>
 #include <QMenu>
 #include <QCloseEvent>
+#include <QScrollBar>
 
 #include "common.h"
 #include "settings.h"
+#include "logbuffer.h"
 
 GameLoggerUI::GameLoggerUI(QWidget *parent) :
     QDialog(parent),
@@ -17,6 +19,9 @@ GameLoggerUI::GameLoggerUI(QWidget *parent) :
     ui->setupUi(this);
 
     createTrayIcon();
+
+    connect(LogBuffer::instance(), SIGNAL(updated()), this, SLOT(refreshLog()));
+    refreshLog();
 }
 
 void GameLoggerUI::setup(QString serverUrl, QString player) {
@@ -74,6 +79,17 @@ void GameLoggerUI::logsUpdated(int apm, Session *session)
         ui->gameNameLabel->setText("<no active game>");
         ui->durationLabel->setText("");
     }
+}
+
+void GameLoggerUI::refreshLog()
+{
+    QScrollBar *scrollBar = ui->logView->verticalScrollBar();
+    bool atBottom = scrollBar->value() >= scrollBar->maximum() - 4;
+
+    ui->logView->setPlainText(LogBuffer::instance()->lines().join("\n"));
+
+    if (atBottom)
+        scrollBar->setValue(scrollBar->maximum());
 }
 
 void GameLoggerUI::createTrayIcon() {

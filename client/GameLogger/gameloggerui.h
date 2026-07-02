@@ -33,6 +33,8 @@ private slots:
     void settingsReady(Settings * settings);
     void logsUpdated(int apm, Session * session);
 
+    void refreshLog();
+
 private:
 
     Ui::GameLoggerUI *ui;
