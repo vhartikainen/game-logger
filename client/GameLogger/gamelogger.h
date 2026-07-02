@@ -2,6 +2,7 @@
 #define GAMELOGGER_H
 
 #include <QTimer>
+#include <QElapsedTimer>
 
 #include "apmlog.h"
 #include "gamelog.h"
@@ -42,7 +43,7 @@ private:
     QTimer *updateTimer;
     QTimer *frameTimer;
 
-    QTime metronome;
+    QElapsedTimer metronome;
 
     int updates;
 };

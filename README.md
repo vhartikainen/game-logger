@@ -40,17 +40,62 @@ or compile them yourself.
 
 ## Compiling
 
-The most recent development environment that successfully compiles the client includes
+**Requirements**
 
-* [QtCreator 5.2.1](http://qt-project.org/downloads)
-* [Microsoft Visual C++ 2010 Express](http://www.visualstudio.com/en-us/downloads/download-visual-studio-vs#DownloadFamilies_4)
-* [Microsoft 8.1 SDK](http://msdn.microsoft.com/en-us/windows/desktop/bg162891.aspx)
+* [Qt 6.x](https://www.qt.io/download) — install the `msvc2022_64` component
+* [Visual Studio 2022](https://visualstudio.microsoft.com/) (Community edition works) — install the *Desktop development with C++* workload
+* Windows SDK (installed automatically with the Visual Studio workload above)
+
+**Using the build script**
+
+Edit the two paths at the top of [client/build.cmd](client/build.cmd) to match your Qt and Visual Studio installations:
+
+```
+set QT_DIR=C:\Qt\6.8.0\msvc2022_64
+set VCVARS=C:\Program Files\Microsoft Visual Studio\2022\Community\VC\Auxiliary\Build\vcvars64.bat
+```
+
+Then run from a plain Command Prompt (no need to open a Developer prompt first):
+
+```
+client\build.cmd
+```
+
+The executable is written to `client\GameLogger\build-tmp\release\GameLogger.exe`.
+
+If [jom](https://wiki.qt.io/Jom) is on your `PATH` it will be used instead of `nmake` for a parallel build.
+
+**Manual build**
+
+```bat
+call "C:\Program Files\Microsoft Visual Studio\2022\Community\VC\Auxiliary\Build\vcvars64.bat"
+set PATH=C:\Qt\6.8.0\msvc2022_64\bin;%PATH%
+mkdir client\GameLogger\build-tmp
+cd client\GameLogger\build-tmp
+qmake ..\GameLogger.pro -spec win32-msvc "CONFIG+=release"
+nmake release
+```
 
 ## Running
 
-The client expects two parameters. The first is the name of the player. Note the player name is case sensitive and it carries through the whole system. This name is used to show the player's information on the website, and the HTML elements are tied to the player using this name. 
+The client takes two required arguments:
 
-The second parameter is the URL to the game logger server where the clientConnect.php resides.
+1. **Player name** — case-sensitive; used to identify the player on the website and in the HTML.
+2. **Server URL** — the base URL of the game logger server where `clientConnect.php` is located.
 
+```bat
+GameLogger.exe <PlayerName> <ServerURL>
+```
 
+**Examples:**
+
+```bat
+GameLogger.exe Alice http://example.com/gamelogger
+```
+
+```bat
+GameLogger.exe "Player One" http://192.168.1.10/gamelogger
+```
+
+If the player name contains spaces, wrap it in quotes. Starting the client without arguments will show an error dialog.
 

@@ -1,6 +1,10 @@
 #include "apmlog.h"
 
+#include <algorithm>
+#include <cmath>
+
 // #define WIN32_LEAN_AND_MEAN             // Exclude rarely-used stuff from Windows headers
+#define NOMINMAX                        // Prevent windows.h min/max macros clashing with std::min/std::max
 #include <Windows.h>
 #include <Xinput.h>
 #include <psapi.h>
@@ -154,16 +158,16 @@ void APMLog::updateGamepad()
         // Left thumb changes
         float leftXDiff = gamepadState->Gamepad.sThumbLX - gamepadPrevState->Gamepad.sThumbLX;
         float leftYDiff = gamepadState->Gamepad.sThumbLY - gamepadPrevState->Gamepad.sThumbLY;
-        float leftMagnitude = min(sqrt(leftXDiff*leftXDiff + leftYDiff*leftYDiff)/32767,1.0);
+        float leftMagnitude = std::min(std::sqrt(leftXDiff*leftXDiff + leftYDiff*leftYDiff)/32767,1.0f);
 
         // Right thumb changes
         float rightXDiff = gamepadState->Gamepad.sThumbRX - gamepadPrevState->Gamepad.sThumbRX;
         float rightYDiff = gamepadState->Gamepad.sThumbRY - gamepadPrevState->Gamepad.sThumbRY;
-        float rightMagnitude = min(sqrt(rightXDiff*rightXDiff + rightYDiff*rightYDiff)/32767,1.0);
+        float rightMagnitude = std::min(std::sqrt(rightXDiff*rightXDiff + rightYDiff*rightYDiff)/32767,1.0f);
 
         // Shoulder buttons
-        float leftShoulder = min(abs((float)gamepadState->Gamepad.bLeftTrigger - gamepadPrevState->Gamepad.bLeftTrigger)/255,1.0);
-        float rightShoulder = min(abs((float)gamepadState->Gamepad.bRightTrigger - gamepadPrevState->Gamepad.bRightTrigger)/255,1.0);
+        float leftShoulder = std::min(std::abs((float)gamepadState->Gamepad.bLeftTrigger - gamepadPrevState->Gamepad.bLeftTrigger)/255,1.0f);
+        float rightShoulder = std::min(std::abs((float)gamepadState->Gamepad.bRightTrigger - gamepadPrevState->Gamepad.bRightTrigger)/255,1.0f);
 
         QDEBUG("[APMLog::updateGamepad()] leftMagnitude=%g, rightMagnitude=%g, leftShoulder=%g, rightShoulder=%g, oldButtons=%d, newButtons=%d", leftMagnitude, rightMagnitude, leftShoulder, rightShoulder, gamepadPrevState->Gamepad.wButtons,  gamepadState->Gamepad.wButtons);
 

@@ -5,9 +5,7 @@
 #-------------------------------------------------
 
 QT      += core gui network
-LIBS    += -L'C:/Development/WINDOW~1/8.1/Lib/winv6.3/um/8x86/' -lpsapi -luser32 -lXinput
-INCLUDEPATH += C:/Development/WINDOW~1/8.1/Include/um
-INCLUDEPATH += C:/Development/WINDOW~1/8.1/Include/shared
+LIBS    += -lpsapi -luser32 -lxinput
 
 greaterThan(QT_MAJOR_VERSION, 4): QT += widgets
 

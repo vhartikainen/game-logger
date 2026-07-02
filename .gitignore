@@ -1,2 +1,19 @@
 # Local docker env overrides
 .env
+# Qt shadow build directory
+client/GameLogger/build-tmp/
+
+# Qt generated artifacts (if building in-source)
+moc_*.cpp
+qrc_*.cpp
+ui_*.h
+*.qmake.stash
+object_script.*
+Makefile
+Makefile.Debug
+Makefile.Release
+
+# Build outputs
+*.o
+*.exe
+build.log
