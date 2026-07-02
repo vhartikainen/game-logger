@@ -68,7 +68,7 @@
 35	EYE.exe	E.Y.E: Divine Cybermancy	http://cdn.steampowered.com/v/gfx/apps/91700/header_292x136.jpg?t=1324336487
 36	grimrock.exe	Legend of Grimrock	http://cdn.steampowered.com/v/gfx/apps/207170/header_292x136.jpg?t=1339715827
 37	saintsrowthethird_dx11.exe	Saints Row: The Third	http://pcgameswallpapers.com/wp-content/uploads/2013/03/Saints-Row-The-Third-Wallpaper-1920x1080-180x180.jpg
-38	BB_LE.exe	Blood Bowl® Legendary Edition	http://cdn.steampowered.com/v/gfx/apps/58520/header_292x136.jpg?t=1322612472
+38	BB_LE.exe	Blood Bowlï¿½ Legendary Edition	http://cdn.steampowered.com/v/gfx/apps/58520/header_292x136.jpg?t=1322612472
 39	DOW2.exe	Warhammer 40,000: Dawn of War II: Retribution	http://cdn.steampowered.com/v/gfx/apps/56437/header_292x136.jpg?t=1328477972
 40	Diablo III.exe	Diablo 3	http://gamingwithscissors.com/wp-content/uploads/2012/05/Diablo-III.png
 41	bf3.exe	Battlefield 3	http://swigon.radom.pl/grafika/bf.png
@@ -93,5 +93,54 @@
 60	AlanWake.exe	Alan Wake	http://fc07.deviantart.net/fs70/f/2013/043/f/c/alan_wake_icon_by_warriotox-d5upcy8.png
 61	TombRaider.exe	Tomb Raider	https://profile-a.xx.fbcdn.net/hprofile-ash4/188162_156755584360182_1861567093_n.jpg
 62	JustCause2.exe	Just Cause 2	https://photos-a.xx.fbcdn.net/hphotos-ash3/598889_422406287839500_1558707180_a.png
+63	Golf With Your Friends.exe	Golf With Your Friends	https://cdn.akamai.steamstatic.com/steam/apps/431240/header.jpg
+64	PredecessorClient-Win64-Shipping.exe	Predecessor	https://cdn.akamai.steamstatic.com/steam/apps/961200/header.jpg
+65	Diablo IV.exe	Diablo IV	https://cdn.akamai.steamstatic.com/steam/apps/2344520/header.jpg
+66	FTLGame.exe	FTL: Faster Than Light	https://cdn.akamai.steamstatic.com/steam/apps/212680/header.jpg
+67	The Jackbox Party Pack 6.exe	The Jackbox Party Pack 6	https://cdn.akamai.steamstatic.com/steam/apps/1005300/header.jpg
+68	Overcooked2.exe	Overcooked! 2	https://cdn.akamai.steamstatic.com/steam/apps/728880/header.jpg
+69	WhosYourDaddy.exe	Who's Your Daddy?!	https://cdn.akamai.steamstatic.com/steam/apps/427730/header.jpg
+70	TheEscapists2.exe	The Escapists 2	https://cdn.akamai.steamstatic.com/steam/apps/641990/header.jpg
+71	Rocksmith2014.exe	Rocksmith 2014 Edition - Remastered	https://cdn.akamai.steamstatic.com/steam/apps/221680/header.jpg
+72	GameOfLife2.exe	THE GAME OF LIFE 2	https://cdn.akamai.steamstatic.com/steam/apps/1455630/header.jpg
+73	Wreckfest.exe	Wreckfest	https://cdn.akamai.steamstatic.com/steam/apps/228380/header.jpg
+74	ClientG.exe	Command & Conquer Remastered Collection	https://cdn.akamai.steamstatic.com/steam/apps/1213210/header.jpg
+75	TOM-Win64-Shipping.exe	Tribes of Midgard	https://cdn.akamai.steamstatic.com/steam/apps/858820/header.jpg
+76	Gang Beasts.exe	Gang Beasts	https://cdn.akamai.steamstatic.com/steam/apps/285900/header.jpg
+77	Cyberpunk2077.exe	Cyberpunk 2077	https://cdn.akamai.steamstatic.com/steam/apps/1091500/header.jpg
+78	Warhammer.exe	Warhammer 40,000: Inquisitor - Martyr	https://cdn.akamai.steamstatic.com/steam/apps/527430/header.jpg
+79	CraftWorld.exe	Craft The World	https://cdn.akamai.steamstatic.com/steam/apps/248390/header.jpg
+80	Drawful 2.exe	Drawful 2	https://cdn.akamai.steamstatic.com/steam/apps/442070/header.jpg
+81	CATO.exe	CATO: Buttered Cat	https://cdn.akamai.steamstatic.com/steam/apps/1999520/header.jpg
+82	KingdomsReborn.exe	Kingdoms Reborn	https://cdn.akamai.steamstatic.com/steam/apps/1307890/header.jpg
+83	valheim.exe	Valheim	https://cdn.akamai.steamstatic.com/steam/apps/892970/header.jpg
+84	mow2.exe	Men of War II	https://cdn.akamai.steamstatic.com/steam/apps/1128860/header.jpg
+85	Len's Island.exe	Len's Island	https://cdn.akamai.steamstatic.com/steam/apps/1335830/header.jpg
+86	LortGame-Win64-Shipping.exe	LORT	https://cdn.akamai.steamstatic.com/steam/apps/2956680/header.jpg
+87	Planet Crafter.exe	The Planet Crafter	https://cdn.akamai.steamstatic.com/steam/apps/1284190/header.jpg
+88	The Jackbox Party Pack 10.exe	The Jackbox Party Pack 10	https://cdn.akamai.steamstatic.com/steam/apps/2216830/header.jpg
+89	Human.exe	Human Fall Flat	https://cdn.akamai.steamstatic.com/steam/apps/477160/header.jpg
+90	reactivedrop.exe	Alien Swarm: Reactive Drop	https://cdn.akamai.steamstatic.com/steam/apps/563560/header.jpg
+91	FSD-Win64-Shipping.exe	Deep Rock Galactic	https://cdn.akamai.steamstatic.com/steam/apps/548430/header.jpg
+92	UltimateChickenHorse.exe	Ultimate Chicken Horse	https://cdn.akamai.steamstatic.com/steam/apps/386940/header.jpg
+93	vermintide2.exe	Warhammer: Vermintide 2	https://cdn.akamai.steamstatic.com/steam/apps/552500/header.jpg
+94	Warhammer 40000 Space Marine 2.exe	Warhammer 40,000: Space Marine 2	https://cdn.akamai.steamstatic.com/steam/apps/2183900/header.jpg
+95	A Gentlemen's Dispute.exe	A Gentlemen's Dispute	https://cdn.akamai.steamstatic.com/steam/apps/2820700/header.jpg
+96	BloonsTD6.exe	Bloons TD 6	https://cdn.akamai.steamstatic.com/steam/apps/960090/header.jpg
+97	PioneerGame.exe	ARC Raiders	https://cdn.akamai.steamstatic.com/steam/apps/1808500/header.jpg
+98	StarRuptureGameSteam-Win64-Shipping.exe	StarRupture	https://cdn.akamai.steamstatic.com/steam/apps/1631270/header.jpg
+102	GTA5_Enhanced.exe	Grand Theft Auto V Enhanced	https://cdn.akamai.steamstatic.com/steam/apps/3240220/header.jpg
+103	stellaris.exe	Stellaris	https://cdn.akamai.steamstatic.com/steam/apps/281990/header.jpg
+104	PEAK.exe	PEAK	https://cdn.akamai.steamstatic.com/steam/apps/3527290/header.jpg
+105	PathOfExile_x64Steam.exe	Path of Exile 2	https://cdn.akamai.steamstatic.com/steam/apps/2694490/header.jpg
+106	7DaysToDie.exe	7 Days to Die	https://cdn.akamai.steamstatic.com/steam/apps/251570/header.jpg
+107	TslGame.exe	PUBG: BATTLEGROUNDS	https://cdn.akamai.steamstatic.com/steam/apps/578080/header.jpg
+108	cs2.exe	Counter-Strike 2	https://cdn.akamai.steamstatic.com/steam/apps/730/header.jpg
+109	Headliners-Win64-Shipping.exe	The Headliners	https://cdn.akamai.steamstatic.com/steam/apps/3059070/header.jpg
+110	Void Crew.exe	Void Crew	https://cdn.akamai.steamstatic.com/steam/apps/1063420/header.jpg
+111	enlisted.exe	Enlisted	https://cdn.akamai.steamstatic.com/steam/apps/2051620/header.jpg
+112	aces.exe	War Thunder	https://cdn.akamai.steamstatic.com/steam/apps/236390/header.jpg
+113	Besiege.exe	Besiege	https://cdn.akamai.steamstatic.com/steam/apps/346010/header.jpg
 99	notepad.exe	Windows standard notepad	https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcSS9QbQXDXI1xVUmA_4gUkSAtpCmkceJYC89PFlw33qy8JjNnbs1Q
 !100	calc.exe	Windows standard calculator 
+101	CalculatorApp.exe	Windows 11 Calculator	https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcSS9QbQXDXI1xVUmA_4gUkSAtpCmkceJYC89PFlw33qy8JjNnbs1Q
