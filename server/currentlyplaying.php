@@ -1,5 +1,15 @@
+<!DOCTYPE html>
+<html>
+<head>
+	<meta charset="utf-8">
+	<title>GameLogger — Currently Playing</title>
+	<link rel="stylesheet" type="text/css" href="currentlyplayingstyle.css">
+	<!-- jQuery must load before gamelogger.js (which uses $ and jQuery 1.7's .error()). -->
+	<script type="text/javascript" src="gamelogger/jquery-1.7.2.min.js"></script>
 	<script type="text/javascript" src="gamelogger/gamelogger.js"></script>
 	<script type="text/javascript" src="gamelogger/gamelogger.histogram.js"></script>
+</head>
+<body>
 
 <div class="activegamesheader">
 	<h1 style="width: 80px;"><a href="#" title="Player Name" alt="Player Name">Player</a></h1>
@@ -34,13 +44,28 @@
 	<div class="gl-apm-total"><span class="gl-apm-total" data-player="pavel"></span></div>
 	<div class="gl-game-played"><span class="gl-game-played" data-player="pavel"></span></div>
 </div>
+<div class="gamedetail">
+	<div class="player" style="background:url('./elements/tero-avatar.jpg')"><span class="player">Tero</span></div>
+	<div class="gl-game-logo-bg" data-player="tero"><div class="gl-game-name" ><span class="gl-game-name" data-player="tero"></span></div></div>
+	<div class="gl-apm-total"><span class="gl-apm-total" data-player="tero"></span></div>
+	<div class="gl-game-played"><span class="gl-game-played" data-player="tero"></span></div>
+</div>
+<div class="gamedetail">
+	<div class="player" style="background:url('./elements/ville-avatar.jpg')"><span class="player">Ville</span></div>
+	<div class="gl-game-logo-bg" data-player="ville"><div class="gl-game-name" ><span class="gl-game-name" data-player="ville"></span></div></div>
+	<div class="gl-apm-total"><span class="gl-apm-total" data-player="ville"></span></div>
+	<div class="gl-game-played"><span class="gl-game-played" data-player="ville"></span></div>
+</div>
 
 <div class="clear"></div>
 	
 <div class="gl-apm-histogram" 
 	data-apm-max="150"
-	data-players="Mikko,Juha,Pavel"
+	data-players="Mikko,Juha,Pavel,Tero,Ville"
 	data-duration="120"
 	data-ticks="4"
 	data-bins="30">
-</div>	
+</div>
+
+</body>
+</html>

@@ -1,15 +1,23 @@
+<!DOCTYPE html>
 <html>
+<head>
+	<meta charset="utf-8">
+	<title>GameLogger — History</title>
+	<link rel="stylesheet" type="text/css" href="massakuuri.css">
+</head>
 <body>
 
 <!-- Gamelogger history begins -->
 
 
-	<script type="text/javascript" src="gamelogger/jquery.mousewheel.min.js"></script>	
+	<!-- jQuery core must load before its plugins (mousewheel/touchSwipe) and gamelogger.js. -->
+	<script type="text/javascript" src="gamelogger/jquery-1.7.2.min.js"></script>
+	<script type="text/javascript" src="gamelogger/jquery.mousewheel.min.js"></script>
+	<script type="text/javascript" src="gamelogger/jquery.touchSwipe.min.js"></script>
 	<script type="text/javascript" src="gamelogger/gamelogger.js"></script>
 	<script type="text/javascript" src="gamelogger/gamelogger.history.js"></script>
 	<script type="text/javascript" src="gamelogger/gamelogger.history.game.histogram.js"></script>
 	<script type="text/javascript" src="gamelogger/gamelogger.history.timeline.js"></script>
-	<script type="text/javascript" src="gamelogger/jquery.touchSwipe.min.js"></script>
 	<script type="text/javascript">
 		/*
 			The following structure is used to define a gradient for the games. Each widget will use the 
@@ -147,6 +155,8 @@
 				<div class="player" style="background:url('./elements/juha-avatar.jpg');"><span class="player">Juha</span></div>
 				<div class="player" style="background:url('./elements/sami-avatar.jpg');"><span class="player">Sami</span></div>
 				<div class="player" style="background:url('./elements/pavel-avatar.jpg');"><span class="player">Pavel</span></div>
+				<div class="player" style="background:url('./elements/tero-avatar.jpg');"><span class="player">Tero</span></div>
+				<div class="player" style="background:url('./elements/ville-avatar.jpg');"><span class="player">Ville</span></div>
 			</div>
 			<div class="gl-history-timeline">
 				<div class="gl-history-timeline-game" data-player="mikko"></div>
@@ -160,6 +170,12 @@
 
 				<div class="gl-history-timeline-game" data-player="pavel"></div>
 				<div class="gl-history-timeline-apm" data-apm-max="150" data-player="pavel"></div>
+
+				<div class="gl-history-timeline-game" data-player="tero"></div>
+				<div class="gl-history-timeline-apm" data-apm-max="150" data-player="tero"></div>
+
+				<div class="gl-history-timeline-game" data-player="ville"></div>
+				<div class="gl-history-timeline-apm" data-apm-max="150" data-player="ville"></div>
 				<div class="gl-history-timeline-ticks"></div>
 			</div>
 			<div style="clear: both; ">&nbsp;</div>
