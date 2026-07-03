@@ -9,8 +9,10 @@ RUN docker-php-ext-install mysqli && docker-php-ext-enable mysqli
 # Enable short_open_tag so the legacy <? ... ?> blocks are parsed.
 COPY docker/php/php.ini /usr/local/etc/php/conf.d/gamelogger.ini
 
-# The PHP source is bind-mounted at runtime via docker-compose (./server).
-# For a standalone image, uncomment the next line:
-# COPY server/ /var/www/html/
+# The PHP source is bind-mounted at runtime via docker-compose (./server) for
+# local dev. It's also copied into the image here so the built image is
+# self-contained for standalone/production use (the bind mount, when present,
+# overrides this at runtime).
+COPY server/ /var/www/html/
 
 WORKDIR /var/www/html
