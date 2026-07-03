@@ -31,6 +31,7 @@ public slots:
 
 signals:
     void error(QString error);
+    void status(QString status);
     void settingsReady(Settings * settings);
     void updated(int apm, Session * session);
 

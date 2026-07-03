@@ -3,6 +3,7 @@
 
 #include <QNetworkAccessManager>
 #include <QtNetwork>
+#include <QHash>
 
 #include "settings.h"
 #include "session.h"
@@ -23,23 +24,33 @@ public:
     void sendAPM(int *buffer, int size);
 
 signals:
+    // Terminal failure: the request was retried and finally given up on.
     void error(QString error);
+    // Non-terminal, informational (e.g. "retrying in 4s", "reconnected").
+    void status(QString status);
 
 private slots:
-    void networkDummyFinished();
-    void networkError(QNetworkReply::NetworkError code);
-    void readSettings();
+    void replyFinished();
 
 private:
+    // Everything needed to reissue a request if it fails.
+    struct RequestState {
+        QNetworkRequest request;
+        int attempt;        // 0-based attempt counter
+        bool isSettings;    // settings need parsing on success + infinite retry
+    };
 
-    void submitRequest(QNetworkRequest req);
+    void sendRequest(const QNetworkRequest &req, bool isSettings, int attempt);
+    void handleFailure(const QString &errStr, const RequestState &state);
+    int retryDelay(int attempt) const;
 
     Settings *settings;
 
     QNetworkAccessManager qnam;
-    QNetworkReply *reply;
-    QList<QNetworkReply *> replyList;
+    QHash<QNetworkReply *, RequestState> pending;
 
+    // True once at least one request succeeded, so we can announce recovery.
+    bool wasFailing;
 };
 
 #endif // NETWORKHANDLER_H

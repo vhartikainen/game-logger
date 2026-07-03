@@ -27,6 +27,7 @@ private slots:
     void trayClicked(QSystemTrayIcon::ActivationReason reason);
 
     void exitError(QString error);
+    void statusUpdate(QString status);
 
     void startQuitting();
 
@@ -48,6 +49,8 @@ private:
     QSystemTrayIcon *trayIcon;
     QAction *quitAction;
     QMenu   *trayIconMenu;
+
+    QString lastError;
 
 protected:
     void closeEvent(QCloseEvent *event);

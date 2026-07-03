@@ -2,6 +2,7 @@
 #include <QMessageBox>
 #include <QDateTime>
 #include <windows.h>
+#include <lmcons.h>
 #include "gameloggerui.h"
 #include "logbuffer.h"
 
@@ -43,15 +44,33 @@ int main(int argc, char *argv[])
         return -1;
     }
 
+    const QString defaultUrl = "http://gamelogger.duckdns.org/gamelogger";
+
     QStringList args = a.arguments();
-    if (args.size() < 3) {
+
+    // Player name: use the first argument if given, otherwise fall back to the
+    // current Windows user name.
+    QString player = (args.size() >= 2) ? args.at(1) : QString();
+    if (player.isEmpty()) {
+        wchar_t nameBuf[UNLEN + 1];
+        DWORD nameLen = UNLEN + 1;
+        if (GetUserNameW(nameBuf, &nameLen) && nameLen > 1) {
+            // GetUserNameW reports nameLen including the null terminator.
+            player = QString::fromWCharArray(nameBuf, static_cast<int>(nameLen) - 1);
+        }
+    }
+    if (player.isEmpty()) {
         QMessageBox msg;
-        msg.setText("Two input arguments required: first is the user name, second is the url to settings.");
+        msg.setText("Could not determine the Windows user name. Pass it as the first argument.");
         msg.exec();
         return -1;
     }
+
+    // Settings URL: use the second argument if given, otherwise the default.
+    QString serverUrl = (args.size() >= 3 && !args.at(2).isEmpty()) ? args.at(2) : defaultUrl;
+
     GameLoggerUI w(0);
-    w.setup(args.at(2),args.at(1));
+    w.setup(serverUrl, player);
 
 //    w.show();
     return a.exec();

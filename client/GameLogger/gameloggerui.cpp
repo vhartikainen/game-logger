@@ -26,8 +26,17 @@ GameLoggerUI::GameLoggerUI(QWidget *parent) :
 
 void GameLoggerUI::setup(QString serverUrl, QString player) {
     QDEBUG("[GameLoggerUI::setup()] called with url %s and player %s", qPrintable(serverUrl), qPrintable(player));
+
+    // Populate the Settings tab immediately from the startup parameters so the
+    // user can verify them even if fetching settings from the server fails.
+    ui->userLabel->setText(player.isEmpty() ? "<not set>" : player);
+    ui->serverURLLabel->setText(serverUrl.isEmpty() ? "<not set>" : serverUrl);
+    ui->suppressLabel->setText("<pending server settings>");
+    ui->statusLabel->setText("Fetching settings from server...");
+
     gameLogger = new GameLogger(serverUrl, player);
     connect(gameLogger, SIGNAL(error(QString)), this, SLOT(exitError(QString)));
+    connect(gameLogger, SIGNAL(status(QString)), this, SLOT(statusUpdate(QString)));
     connect(gameLogger, SIGNAL(settingsReady(Settings*)), this, SLOT(settingsReady(Settings*)));
     connect(gameLogger, SIGNAL(updated(int,Session*)), this, SLOT(logsUpdated(int,Session*)));
 }
@@ -66,6 +75,7 @@ void GameLoggerUI::settingsReady(Settings *settings)
     ui->serverURLLabel->setText(settings->serverUrl);
     ui->userLabel->setText(settings->player);
     ui->suppressLabel->setText((settings->supressUpdates)?"true":"false");
+    ui->statusLabel->setText("Settings loaded, running.");
 }
 
 void GameLoggerUI::logsUpdated(int apm, Session *session)
@@ -123,9 +133,22 @@ void GameLoggerUI::exitError(QString error)
 {
     QDEBUG("[GameLoggerUI::exitError()] called with error %s", qPrintable(error));
 
-/*    QMessageBox msg;
-    msg.setText(error);
-    msg.exec();
+    // Surface the error on the Settings tab (and via a tray notification) so
+    // the user can tell startup/connection failed rather than silently hanging.
+    // Network errors can repeat every poll, so only notify when it changes.
+    ui->statusLabel->setText("Error: " + error);
+    if (trayIcon && error != lastError)
+        trayIcon->showMessage("GameLogger", error, QSystemTrayIcon::Warning);
+    lastError = error;
+}
 
-    qApp->quit();*/
+void GameLoggerUI::statusUpdate(QString status)
+{
+    QDEBUG("[GameLoggerUI::statusUpdate()] %s", qPrintable(status));
+
+    // Non-terminal connection status (retrying, reconnected, ...). Update the
+    // Settings tab only -- no tray notification, to avoid spam on flaky links.
+    ui->statusLabel->setText(status);
+    // A fresh non-error status means we're no longer sitting on a hard error.
+    lastError.clear();
 }

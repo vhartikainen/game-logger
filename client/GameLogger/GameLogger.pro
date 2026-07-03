@@ -5,7 +5,7 @@
 #-------------------------------------------------
 
 QT      += core gui network
-LIBS    += -lpsapi -luser32 -lxinput
+LIBS    += -lpsapi -luser32 -lxinput -ladvapi32
 
 greaterThan(QT_MAJOR_VERSION, 4): QT += widgets
 

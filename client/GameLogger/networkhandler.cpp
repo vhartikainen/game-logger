@@ -1,72 +1,106 @@
 #include "networkhandler.h"
 #include "common.h"
 
-NetworkHandler::NetworkHandler(Settings *settings) : settings(settings)
+#include <QTimer>
+
+// Retry policy for transient connection failures. Backoff is exponential,
+// starting at RETRY_BASE_MS and doubling up to RETRY_MAX_MS.
+//
+// Settings are retried forever (the client can't run without them). Fire-and-
+// forget data requests (session/APM updates) are retried a bounded number of
+// times, after which they are dropped -- the next loop iteration supersedes
+// them with fresher data anyway.
+static const int RETRY_BASE_MS    = 1000;
+static const int RETRY_MAX_MS     = 30000;
+static const int MAX_DATA_RETRIES = 5;
+
+NetworkHandler::NetworkHandler(Settings *settings) : settings(settings), wasFailing(false)
 {
 
 }
 
-void NetworkHandler::networkError(QNetworkReply::NetworkError code) {
-    QDEBUG("[NetworkHandler::networkError()] called");
-    int i = 0;
-    while (i < replyList.size()) {
-        QNetworkReply *r = replyList.at(i);
-        if (r->error() != QNetworkReply::NoError) {
-            QDEBUG("[NetworkHandler::networkError()] emitting error %s", qPrintable(r->errorString()));
-            emit error(r->errorString());
-            r->deleteLater();
-            replyList.removeAt(i);
-        } else {
-            ++i;
-        }
-    }
-}
-
-void NetworkHandler::networkDummyFinished() {
-    QDEBUG("[NetworkHandler::networkDummyFinished()] called");
-    int i = 0;
-    while (i < replyList.size()) {
-        QNetworkReply *r = replyList.at(i);
-        if (r->isFinished()) {
-            r->deleteLater();
-            replyList.removeAt(i);
-        } else {
-            ++i;
-        }
-    }
-}
-
-void NetworkHandler::submitRequest(QNetworkRequest req)
+int NetworkHandler::retryDelay(int attempt) const
 {
-    QDEBUG("[NetworkHandler::submitRequest()] called with URL: %s", qPrintable(req.url().toString()));
-    QNetworkReply * rep = qnam.get(req);
-    replyList.append(rep);
-    connect(rep, SIGNAL(error(QNetworkReply::NetworkError)), this, SLOT(networkError(QNetworkReply::NetworkError)));
-    connect(rep, SIGNAL(finished()), this, SLOT(networkDummyFinished()) );
+    // Cap the shift so we never overflow, then clamp to the max delay.
+    int shift = qMin(attempt, 16);
+    qint64 delay = (qint64)RETRY_BASE_MS << shift;
+    return (int)qMin<qint64>(delay, RETRY_MAX_MS);
+}
+
+void NetworkHandler::sendRequest(const QNetworkRequest &req, bool isSettings, int attempt)
+{
+    QDEBUG("[NetworkHandler::sendRequest()] %s (attempt %d) URL: %s",
+           isSettings ? "settings" : "data", attempt + 1, qPrintable(req.url().toString()));
+
+    QNetworkReply *rep = qnam.get(req);
+    RequestState state;
+    state.request = req;
+    state.attempt = attempt;
+    state.isSettings = isSettings;
+    pending.insert(rep, state);
+
+    // finished() fires for both success and error, so it's the only signal we
+    // need to drive success handling, retries and cleanup.
+    connect(rep, SIGNAL(finished()), this, SLOT(replyFinished()));
+}
+
+void NetworkHandler::replyFinished()
+{
+    QNetworkReply *rep = qobject_cast<QNetworkReply *>(sender());
+    if (!rep)
+        return;
+
+    RequestState state = pending.take(rep);
+    rep->deleteLater();
+
+    if (rep->error() != QNetworkReply::NoError) {
+        handleFailure(rep->errorString(), state);
+        return;
+    }
+
+    // Success. Announce recovery if we had been in a failing state.
+    if (wasFailing) {
+        wasFailing = false;
+        emit status("Connection restored.");
+    }
+
+    if (state.isSettings) {
+        QString data = QString(rep->readAll());
+        settings->parseSettings(data);
+        QDEBUG("[NetworkHandler::replyFinished()] settings read");
+    }
+}
+
+void NetworkHandler::handleFailure(const QString &errStr, const RequestState &state)
+{
+    wasFailing = true;
+
+    const bool canRetry = state.isSettings || state.attempt < MAX_DATA_RETRIES;
+    if (!canRetry) {
+        QDEBUG("[NetworkHandler::handleFailure()] giving up: %s", qPrintable(errStr));
+        emit error(errStr + " (gave up after " + QString::number(state.attempt + 1) + " attempts)");
+        return;
+    }
+
+    const int delay = retryDelay(state.attempt);
+    QDEBUG("[NetworkHandler::handleFailure()] %s -- retrying in %d ms", qPrintable(errStr), delay);
+    emit status("Connection problem: " + errStr
+                + " -- retrying in " + QString::number(delay / 1000) + "s");
+
+    // Capture by value so the request survives until the timer fires. `this`
+    // as the context object cancels the retry if the handler is destroyed.
+    const QNetworkRequest req = state.request;
+    const bool isSettings = state.isSettings;
+    const int nextAttempt = state.attempt + 1;
+    QTimer::singleShot(delay, this, [this, req, isSettings, nextAttempt]() {
+        sendRequest(req, isSettings, nextAttempt);
+    });
 }
 
 void NetworkHandler::querySettings() {
-    reply = qnam.get(QNetworkRequest(QUrl(settings->serverUrl + "/clientConnect.php?request=settings")));
-    QDEBUG("[NetworkHandler::querySettings()] reply contructed");
-    connect(reply, SIGNAL(error(QNetworkReply::NetworkError)), this, SLOT(networkError(QNetworkReply::NetworkError)));
-    connect(reply, SIGNAL(finished()), this, SLOT(readSettings()));
-    QDEBUG("[NetworkHandler::querySettings()] exiting ");
+    QDEBUG("[NetworkHandler::querySettings()] called");
+    sendRequest(QNetworkRequest(QUrl(settings->serverUrl + "/clientConnect.php?request=settings")), true, 0);
 }
-
-void NetworkHandler::readSettings()
-{
-    QDEBUG("[NetworkHandler::readSettings()] called");
-    if (reply->error() != QNetworkReply::NoError) {
-        emit error(reply->errorString());
-        reply->deleteLater();
-        return;
-    }
-    QString data = QString(reply->readAll());
-    settings->parseSettings(data);
-    QDEBUG("[NetworkHandler::readSettings()] settings read");
-}
-
-
 
 void NetworkHandler::updateSession(Session *session)
 {
@@ -85,7 +119,7 @@ void NetworkHandler::updateSession(Session *session)
 
     url.setQuery(query.query());
 
-    submitRequest(QNetworkRequest(url));
+    sendRequest(QNetworkRequest(url), false, 0);
 }
 
 void NetworkHandler::reportNoSession(int apm)
@@ -103,7 +137,7 @@ void NetworkHandler::reportNoSession(int apm)
 
     url.setQuery(query.query());
 
-    submitRequest(QNetworkRequest(url));
+    sendRequest(QNetworkRequest(url), false, 0);
 }
 
 void NetworkHandler::sendAPM(int *buffer, int size)
@@ -125,6 +159,5 @@ void NetworkHandler::sendAPM(int *buffer, int size)
 
     url.setQuery(query.query());
 
-    submitRequest(QNetworkRequest(url));
+    sendRequest(QNetworkRequest(url), false, 0);
 }
-

@@ -7,6 +7,8 @@ GameLogger::GameLogger(QString serverUrl, QString player)
 
     networkHandler = new NetworkHandler(settings);
     connect(networkHandler, SIGNAL(error(QString)), this, SLOT(networkError(QString)));
+    // Forward informational (non-terminal) connection status to the UI.
+    connect(networkHandler, SIGNAL(status(QString)), this, SIGNAL(status(QString)));
 
     // Transfer handling to timer thread
     updateTimer = new QTimer(this);
@@ -62,10 +64,12 @@ void GameLogger::update() {
     QDEBUG("[GameLogger::update()] called at %d", QTime::currentTime().msec());
 
     if (!settings->ready) {
-        // Settings not ready wait for them
+        // Settings not ready yet. NetworkHandler retries the fetch with
+        // backoff indefinitely, so we just keep waiting rather than giving up.
+        // Surface an informational note once if it's taking a while.
         ++waitedForSettings;
-        if (waitedForSettings > 30) {
-            emit error("Couldn't get settings within 30 sec.");
+        if (waitedForSettings == 30) {
+            emit status("Still waiting for initial settings from server...");
         }
         return;
     } else {
