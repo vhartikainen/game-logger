@@ -13,6 +13,12 @@ namespace Ui {
     class GameLoggerUI;
 }
 
+// Qt Charts types used only as pointers here; forward-declared to keep the
+// header light. In Qt 6 these live in the global namespace.
+class QChartView;
+class QLineSeries;
+class QValueAxis;
+
 class GameLoggerUI : public QDialog
 {
     Q_OBJECT
@@ -47,7 +53,24 @@ private:
     // resolved to game names and logos. Not owned.
     Settings * settings;
 
-    void createTrayIcon();        
+    void createTrayIcon();
+
+    // --- Graphs tab (Qt Charts) ---
+    void setupCharts();
+    void updateApmChart(int apm);
+    void rebuildPlaytimeCharts(const QList<GameStat> &stats,
+                               const QHash<int, QString> &names);
+
+    // Live APM line chart, updated once per logsUpdated() tick.
+    QChartView *apmChartView;
+    QLineSeries *apmSeries;
+    QValueAxis *apmAxisX;
+    QValueAxis *apmAxisY;
+    int apmSampleX;               // monotonically increasing x for APM samples
+
+    // Playtime charts, rebuilt on each statsUpdated().
+    QChartView *barChartView;
+    QChartView *donutChartView;
 
     QTimer * quitter;
 

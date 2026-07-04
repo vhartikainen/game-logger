@@ -9,10 +9,27 @@
 #include <QScrollBar>
 #include <QTreeWidgetItem>
 #include <QDateTime>
+#include <QPainter>
+
+#include <QtCharts/QChartView>
+#include <QtCharts/QChart>
+#include <QtCharts/QLineSeries>
+#include <QtCharts/QValueAxis>
+#include <QtCharts/QHorizontalBarSeries>
+#include <QtCharts/QBarSet>
+#include <QtCharts/QBarCategoryAxis>
+#include <QtCharts/QPieSeries>
 
 #include "common.h"
 #include "settings.h"
 #include "logbuffer.h"
+
+// How many APM samples the live chart keeps in view. logsUpdated() fires
+// roughly once per second, so this is about two minutes of history.
+static const int APM_WINDOW = 120;
+
+// How many games get their own bar/slice before the rest fold into "Other".
+static const int TOP_N = 8;
 
 // Human-readable play time, showing the two most significant units.
 static QString formatDuration(qint64 seconds)
@@ -46,9 +63,162 @@ GameLoggerUI::GameLoggerUI(QWidget *parent) :
     ui->setupUi(this);
 
     createTrayIcon();
+    setupCharts();
 
     connect(LogBuffer::instance(), SIGNAL(updated()), this, SLOT(refreshLog()));
     refreshLog();
+}
+
+void GameLoggerUI::setupCharts()
+{
+    apmSampleX = 0;
+
+    // --- Live APM line chart ---------------------------------------------
+    apmSeries = new QLineSeries();
+
+    QChart *apmChart = new QChart();
+    apmChart->addSeries(apmSeries);
+    apmChart->legend()->hide();
+    apmChart->setTitle("Live APM (last 2 min)");
+    apmChart->setMargins(QMargins(4, 4, 4, 4));
+
+    apmAxisX = new QValueAxis();
+    apmAxisX->setRange(0, APM_WINDOW - 1);
+    apmAxisX->setLabelsVisible(false);
+    apmChart->addAxis(apmAxisX, Qt::AlignBottom);
+    apmSeries->attachAxis(apmAxisX);
+
+    apmAxisY = new QValueAxis();
+    apmAxisY->setRange(0, 60);
+    apmAxisY->setLabelFormat("%d");
+    apmChart->addAxis(apmAxisY, Qt::AlignLeft);
+    apmSeries->attachAxis(apmAxisY);
+
+    apmChartView = new QChartView(apmChart);
+    apmChartView->setRenderHint(QPainter::Antialiasing);
+    ui->apmChartContainer->layout()->addWidget(apmChartView);
+
+    // --- Playtime bar chart & share donut (populated in statsUpdated) -----
+    barChartView = new QChartView(new QChart());
+    barChartView->setRenderHint(QPainter::Antialiasing);
+    barChartView->chart()->setTitle("Time played per game");
+    barChartView->chart()->legend()->hide();
+    ui->barChartContainer->layout()->addWidget(barChartView);
+
+    donutChartView = new QChartView(new QChart());
+    donutChartView->setRenderHint(QPainter::Antialiasing);
+    donutChartView->chart()->setTitle("Share of total playtime");
+    ui->donutChartContainer->layout()->addWidget(donutChartView);
+}
+
+void GameLoggerUI::updateApmChart(int apm)
+{
+    apmSeries->append(apmSampleX, apm);
+
+    // Drop samples that have scrolled off the left edge of the window.
+    if (apmSeries->count() > APM_WINDOW)
+        apmSeries->removePoints(0, apmSeries->count() - APM_WINDOW);
+
+    // Slide the X window so the most recent APM_WINDOW samples stay visible.
+    qreal maxX = qMax(apmSampleX, APM_WINDOW - 1);
+    apmAxisX->setRange(maxX - (APM_WINDOW - 1), maxX);
+
+    // Grow the Y axis to fit the peak currently in view (never below 60).
+    qreal peak = 60;
+    const QList<QPointF> pts = apmSeries->points();
+    for (int i = 0; i < pts.size(); ++i)
+        peak = qMax(peak, pts.at(i).y());
+    apmAxisY->setRange(0, peak * 1.1);
+
+    apmSampleX++;
+}
+
+void GameLoggerUI::rebuildPlaytimeCharts(const QList<GameStat> &stats,
+                                         const QHash<int, QString> &names)
+{
+    // Aggregate totals for the KPI header.
+    qint64 totalSeconds = 0;
+    int totalSessions = 0;
+    for (int i = 0; i < stats.size(); ++i) {
+        totalSeconds += stats.at(i).seconds;
+        totalSessions += stats.at(i).sessions;
+    }
+
+    const int shown = qMin(TOP_N, stats.size());
+
+    // --- Bar chart: top N games by hours played. Iterate ascending so the
+    // largest bar lands at the top of the horizontal axis. --------------
+    QHorizontalBarSeries *barSeries = new QHorizontalBarSeries();
+    QBarSet *barSet = new QBarSet("Hours");
+    QStringList categories;
+    qreal maxHours = 0;
+    for (int i = shown - 1; i >= 0; --i) {
+        const GameStat &s = stats.at(i);
+        qreal hours = s.seconds / 3600.0;
+        *barSet << hours;
+        categories << names.value(s.gameid, QString("Game #%1").arg(s.gameid));
+        maxHours = qMax(maxHours, hours);
+    }
+    barSeries->append(barSet);
+
+    QChart *barChart = new QChart();
+    barChart->setTitle("Time played per game");
+    barChart->legend()->hide();
+    barChart->addSeries(barSeries);
+    QBarCategoryAxis *catAxis = new QBarCategoryAxis();
+    catAxis->append(categories);
+    barChart->addAxis(catAxis, Qt::AlignLeft);
+    barSeries->attachAxis(catAxis);
+    QValueAxis *valAxis = new QValueAxis();
+    valAxis->setRange(0, qMax(1.0, maxHours * 1.1));
+    valAxis->setTitleText("Hours");
+    barChart->addAxis(valAxis, Qt::AlignBottom);
+    barSeries->attachAxis(valAxis);
+
+    QChart *oldBar = barChartView->chart();
+    barChartView->setChart(barChart);   // view takes ownership of the new chart
+    delete oldBar;                       // ... but not of the old one
+
+    // --- Donut: share of playtime, small games folded into "Other". ------
+    QPieSeries *pie = new QPieSeries();
+    pie->setHoleSize(0.35);
+    qint64 otherSeconds = 0;
+    for (int i = 0; i < stats.size(); ++i) {
+        if (i < TOP_N)
+            pie->append(names.value(stats.at(i).gameid,
+                                    QString("Game #%1").arg(stats.at(i).gameid)),
+                        (double)stats.at(i).seconds);
+        else
+            otherSeconds += stats.at(i).seconds;
+    }
+    if (otherSeconds > 0)
+        pie->append("Other", (double)otherSeconds);
+
+    QChart *donutChart = new QChart();
+    donutChart->setTitle("Share of total playtime");
+    donutChart->legend()->setAlignment(Qt::AlignRight);
+    donutChart->addSeries(pie);
+
+    QChart *oldDonut = donutChartView->chart();
+    donutChartView->setChart(donutChart);
+    delete oldDonut;
+
+    // --- KPI header ------------------------------------------------------
+    const QString topGame = stats.isEmpty()
+        ? QString("-")
+        : names.value(stats.first().gameid,
+                      QString("Game #%1").arg(stats.first().gameid));
+    const qint64 avgSession = (totalSessions > 0) ? totalSeconds / totalSessions : 0;
+
+    ui->kpiLabel->setText(QString(
+        "<b>Total played:</b> %1 &nbsp;&nbsp;&nbsp; "
+        "<b>Sessions:</b> %2 &nbsp;&nbsp;&nbsp; "
+        "<b>Top game:</b> %3 &nbsp;&nbsp;&nbsp; "
+        "<b>Avg session:</b> %4")
+        .arg(formatDuration(totalSeconds))
+        .arg(totalSessions)
+        .arg(topGame)
+        .arg(formatDuration(avgSession)));
 }
 
 void GameLoggerUI::setup(QString serverUrl, QString player) {
@@ -113,6 +283,7 @@ void GameLoggerUI::settingsReady(Settings *settings)
 void GameLoggerUI::logsUpdated(int apm, Session *session)
 {
     ui->apmLabel->setText(QString::number(apm));
+    updateApmChart(apm);
     if (session) {
         ui->gameNameLabel->setText(session->gameName);
         ui->durationLabel->setText("Started at " + session->begun.toString("d.M.yyyy h:mm:ss") + ", played for " + QTime(0,0).addSecs(session->begun.secsTo(session->updated)).toString("h:mm:ss"));
@@ -154,6 +325,9 @@ void GameLoggerUI::statsUpdated(QList<GameStat> stats)
 
     for (int c = 0; c < ui->statsTree->columnCount(); ++c)
         ui->statsTree->resizeColumnToContents(c);
+
+    // Feed the same data (plus the id->name map) into the Graphs tab.
+    rebuildPlaytimeCharts(stats, names);
 }
 
 void GameLoggerUI::refreshLog()
