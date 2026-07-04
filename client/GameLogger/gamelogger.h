@@ -34,6 +34,7 @@ signals:
     void status(QString status);
     void settingsReady(Settings * settings);
     void updated(int apm, Session * session);
+    void statsReady(QList<GameStat> stats);
 
 private:
 

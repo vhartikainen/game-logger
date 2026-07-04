@@ -2,6 +2,9 @@
 #include "common.h"
 
 #include <QTimer>
+#include <QJsonDocument>
+#include <QJsonArray>
+#include <QJsonObject>
 
 // Retry policy for transient connection failures. Backoff is exponential,
 // starting at RETRY_BASE_MS and doubling up to RETRY_MAX_MS.
@@ -27,16 +30,17 @@ int NetworkHandler::retryDelay(int attempt) const
     return (int)qMin<qint64>(delay, RETRY_MAX_MS);
 }
 
-void NetworkHandler::sendRequest(const QNetworkRequest &req, bool isSettings, int attempt)
+void NetworkHandler::sendRequest(const QNetworkRequest &req, RequestKind kind, int attempt)
 {
+    const char *kindStr = (kind == ReqSettings) ? "settings" : (kind == ReqStats) ? "stats" : "data";
     QDEBUG("[NetworkHandler::sendRequest()] %s (attempt %d) URL: %s",
-           isSettings ? "settings" : "data", attempt + 1, qPrintable(req.url().toString()));
+           kindStr, attempt + 1, qPrintable(req.url().toString()));
 
     QNetworkReply *rep = qnam.get(req);
     RequestState state;
     state.request = req;
     state.attempt = attempt;
-    state.isSettings = isSettings;
+    state.kind = kind;
     pending.insert(rep, state);
 
     // finished() fires for both success and error, so it's the only signal we
@@ -64,18 +68,45 @@ void NetworkHandler::replyFinished()
         emit status("Connection restored.");
     }
 
-    if (state.isSettings) {
+    if (state.kind == ReqSettings) {
         QString data = QString(rep->readAll());
         settings->parseSettings(data);
         QDEBUG("[NetworkHandler::replyFinished()] settings read");
+    } else if (state.kind == ReqStats) {
+        parseStats(rep->readAll());
     }
+}
+
+void NetworkHandler::parseStats(const QByteArray &data)
+{
+    QJsonParseError err;
+    QJsonDocument doc = QJsonDocument::fromJson(data, &err);
+    if (err.error != QJsonParseError::NoError || !doc.isArray()) {
+        QDEBUG("[NetworkHandler::parseStats()] bad stats response: %s", qPrintable(err.errorString()));
+        return;
+    }
+
+    QList<GameStat> stats;
+    const QJsonArray arr = doc.array();
+    for (int i = 0; i < arr.size(); ++i) {
+        const QJsonObject obj = arr.at(i).toObject();
+        GameStat s;
+        s.gameid     = obj.value("gameid").toInt();
+        s.seconds    = (qint64)obj.value("seconds").toDouble();
+        s.sessions   = obj.value("sessions").toInt();
+        s.lastPlayed = (qint64)obj.value("lastPlayed").toDouble();
+        stats.append(s);
+    }
+
+    QDEBUG("[NetworkHandler::parseStats()] parsed %d game stats", stats.size());
+    emit statsReady(stats);
 }
 
 void NetworkHandler::handleFailure(const QString &errStr, const RequestState &state)
 {
     wasFailing = true;
 
-    const bool canRetry = state.isSettings || state.attempt < MAX_DATA_RETRIES;
+    const bool canRetry = (state.kind == ReqSettings) || state.attempt < MAX_DATA_RETRIES;
     if (!canRetry) {
         QDEBUG("[NetworkHandler::handleFailure()] giving up: %s", qPrintable(errStr));
         emit error(errStr + " (gave up after " + QString::number(state.attempt + 1) + " attempts)");
@@ -90,16 +121,30 @@ void NetworkHandler::handleFailure(const QString &errStr, const RequestState &st
     // Capture by value so the request survives until the timer fires. `this`
     // as the context object cancels the retry if the handler is destroyed.
     const QNetworkRequest req = state.request;
-    const bool isSettings = state.isSettings;
+    const RequestKind kind = state.kind;
     const int nextAttempt = state.attempt + 1;
-    QTimer::singleShot(delay, this, [this, req, isSettings, nextAttempt]() {
-        sendRequest(req, isSettings, nextAttempt);
+    QTimer::singleShot(delay, this, [this, req, kind, nextAttempt]() {
+        sendRequest(req, kind, nextAttempt);
     });
 }
 
 void NetworkHandler::querySettings() {
     QDEBUG("[NetworkHandler::querySettings()] called");
-    sendRequest(QNetworkRequest(QUrl(settings->serverUrl + "/clientConnect.php?request=settings")), true, 0);
+    sendRequest(QNetworkRequest(QUrl(settings->serverUrl + "/clientConnect.php?request=settings")), ReqSettings, 0);
+}
+
+void NetworkHandler::queryPlayerStats()
+{
+    QDEBUG("[NetworkHandler::queryPlayerStats()] called");
+
+    QUrl url(settings->serverUrl + "/clientConnect.php");
+
+    QUrlQuery query;
+    query.addQueryItem("request", "playerStats");
+    query.addQueryItem("player", settings->player);
+    url.setQuery(query.query());
+
+    sendRequest(QNetworkRequest(url), ReqStats, 0);
 }
 
 void NetworkHandler::updateSession(Session *session)
@@ -119,7 +164,7 @@ void NetworkHandler::updateSession(Session *session)
 
     url.setQuery(query.query());
 
-    sendRequest(QNetworkRequest(url), false, 0);
+    sendRequest(QNetworkRequest(url), ReqData, 0);
 }
 
 void NetworkHandler::reportNoSession(int apm)
@@ -137,7 +182,7 @@ void NetworkHandler::reportNoSession(int apm)
 
     url.setQuery(query.query());
 
-    sendRequest(QNetworkRequest(url), false, 0);
+    sendRequest(QNetworkRequest(url), ReqData, 0);
 }
 
 void NetworkHandler::sendAPM(int *buffer, int size)
@@ -159,5 +204,5 @@ void NetworkHandler::sendAPM(int *buffer, int size)
 
     url.setQuery(query.query());
 
-    sendRequest(QNetworkRequest(url), false, 0);
+    sendRequest(QNetworkRequest(url), ReqData, 0);
 }

@@ -9,6 +9,8 @@ GameLogger::GameLogger(QString serverUrl, QString player)
     connect(networkHandler, SIGNAL(error(QString)), this, SLOT(networkError(QString)));
     // Forward informational (non-terminal) connection status to the UI.
     connect(networkHandler, SIGNAL(status(QString)), this, SIGNAL(status(QString)));
+    // Forward parsed play statistics to the UI.
+    connect(networkHandler, SIGNAL(statsReady(QList<GameStat>)), this, SIGNAL(statsReady(QList<GameStat>)));
 
     // Transfer handling to timer thread
     updateTimer = new QTimer(this);
@@ -113,6 +115,10 @@ void GameLogger::update() {
             // and store current apm
             networkHandler->reportNoSession(apmLog->current);
         }
+
+        // Refresh the player's per-game stats once a minute (covers startup too,
+        // since this branch fires on the first ready iteration).
+        networkHandler->queryPlayerStats();
     }
 
     // Notify observers

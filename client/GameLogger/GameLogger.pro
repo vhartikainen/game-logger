@@ -30,7 +30,8 @@ HEADERS  += \
     gamelog.h \
     session.h \
     gamelogger.h \
-    logbuffer.h
+    logbuffer.h \
+    gamestat.h
 
 FORMS    += \
     gameloggerui.ui

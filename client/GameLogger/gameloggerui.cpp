@@ -7,14 +7,41 @@
 #include <QMenu>
 #include <QCloseEvent>
 #include <QScrollBar>
+#include <QTreeWidgetItem>
+#include <QDateTime>
 
 #include "common.h"
 #include "settings.h"
 #include "logbuffer.h"
 
+// Human-readable play time, showing the two most significant units.
+static QString formatDuration(qint64 seconds)
+{
+    qint64 minutes = seconds / 60;
+    if (minutes < 1)
+        return "<1 min";
+    qint64 hours = minutes / 60;
+    qint64 days = hours / 24;
+    if (days > 0)
+        return QString("%1d %2h").arg(days).arg(hours % 24);
+    if (hours > 0)
+        return QString("%1h %2m").arg(hours).arg(minutes % 60);
+    return QString("%1 min").arg(minutes);
+}
+
+// Unix timestamp -> local date/time, or a dash when unknown.
+static QString formatTimestamp(qint64 unixSeconds)
+{
+    if (unixSeconds <= 0)
+        return "-";
+    QDateTime dt = QDateTime::fromMSecsSinceEpoch(unixSeconds * 1000LL);
+    return dt.toString("d.M.yyyy h:mm");
+}
+
 GameLoggerUI::GameLoggerUI(QWidget *parent) :
     QDialog(parent),
-    ui(new Ui::GameLoggerUI)
+    ui(new Ui::GameLoggerUI),
+    settings(0)
 {
     ui->setupUi(this);
 
@@ -39,6 +66,7 @@ void GameLoggerUI::setup(QString serverUrl, QString player) {
     connect(gameLogger, SIGNAL(status(QString)), this, SLOT(statusUpdate(QString)));
     connect(gameLogger, SIGNAL(settingsReady(Settings*)), this, SLOT(settingsReady(Settings*)));
     connect(gameLogger, SIGNAL(updated(int,Session*)), this, SLOT(logsUpdated(int,Session*)));
+    connect(gameLogger, SIGNAL(statsReady(QList<GameStat>)), this, SLOT(statsUpdated(QList<GameStat>)));
 }
 
 GameLoggerUI::~GameLoggerUI()
@@ -63,6 +91,10 @@ void GameLoggerUI::startQuitting()
 
 void GameLoggerUI::settingsReady(Settings *settings)
 {
+    // Keep the settings around so incoming stats (keyed by game id) can be
+    // resolved to human-readable names.
+    this->settings = settings;
+
     // Show game data
     for (QHash<QString, GameInfo*>::iterator iter = settings->games.begin(); iter != settings->games.end(); ++iter) {
         QStringList lst;
@@ -89,6 +121,39 @@ void GameLoggerUI::logsUpdated(int apm, Session *session)
         ui->gameNameLabel->setText("<no active game>");
         ui->durationLabel->setText("");
     }
+}
+
+void GameLoggerUI::statsUpdated(QList<GameStat> stats)
+{
+    // Build an id -> name lookup from settings (games are keyed by exe name).
+    QHash<int, QString> names;
+    if (settings) {
+        for (QHash<QString, GameInfo*>::const_iterator iter = settings->games.constBegin();
+             iter != settings->games.constEnd(); ++iter) {
+            names.insert(iter.value()->id, iter.value()->completeName);
+        }
+    }
+
+    // Server returns rows already ranked by time played (descending).
+    ui->statsTree->clear();
+    for (int i = 0; i < stats.size(); ++i) {
+        const GameStat &s = stats.at(i);
+        QString name = names.value(s.gameid, QString("Game #%1").arg(s.gameid));
+
+        QStringList cols;
+        cols << name
+             << formatDuration(s.seconds)
+             << QString::number(s.sessions)
+             << formatTimestamp(s.lastPlayed);
+
+        QTreeWidgetItem *item = new QTreeWidgetItem(cols);
+        item->setTextAlignment(1, Qt::AlignRight | Qt::AlignVCenter);
+        item->setTextAlignment(2, Qt::AlignRight | Qt::AlignVCenter);
+        ui->statsTree->addTopLevelItem(item);
+    }
+
+    for (int c = 0; c < ui->statsTree->columnCount(); ++c)
+        ui->statsTree->resizeColumnToContents(c);
 }
 
 void GameLoggerUI::refreshLog()

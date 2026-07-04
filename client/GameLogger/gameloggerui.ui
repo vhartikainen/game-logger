@@ -133,6 +133,53 @@
        </item>
       </layout>
      </widget>
+     <widget class="QWidget" name="statsTab">
+      <attribute name="title">
+       <string>Stats</string>
+      </attribute>
+      <layout class="QVBoxLayout" name="verticalLayout_4">
+       <item>
+        <widget class="QLabel" name="statsHeaderLabel">
+         <property name="text">
+          <string>Your games, ranked by time played</string>
+         </property>
+        </widget>
+       </item>
+       <item>
+        <widget class="QTreeWidget" name="statsTree">
+         <property name="indentation">
+          <number>0</number>
+         </property>
+         <property name="rootIsDecorated">
+          <bool>false</bool>
+         </property>
+         <property name="sortingEnabled">
+          <bool>false</bool>
+         </property>
+         <column>
+          <property name="text">
+           <string>Game</string>
+          </property>
+         </column>
+         <column>
+          <property name="text">
+           <string>Time played</string>
+          </property>
+         </column>
+         <column>
+          <property name="text">
+           <string>Sessions</string>
+          </property>
+         </column>
+         <column>
+          <property name="text">
+           <string>Last played</string>
+          </property>
+         </column>
+        </widget>
+       </item>
+      </layout>
+     </widget>
      <widget class="QWidget" name="tab_2">
       <attribute name="title">
        <string>Settings</string>

@@ -40,6 +40,10 @@ case "reportNoSession":
 case "updateAPM":
 	updateAPM($mysqli);
 	break;
+
+case "playerStats":
+	playerStats($mysqli);
+	break;
 default:
 	echo "request not recognized: ". $request;
 }
@@ -160,6 +164,40 @@ function reportNoSession($mysqli) {
 		// Remove playing row
 		query($mysqli,"DELETE FROM gl_playing WHERE player=\"$player\"");
 	} 	
+}
+
+function playerStats($mysqli) {
+
+	// Per-game totals for a single player, ranked by time played (descending).
+	// Time played is the summed span of every session (finished sessions live in
+	// gl_history, the ongoing one in gl_playing). UNION ALL keeps both -- there is
+	// no overlap between the tables for a given player.
+	$player = $mysqli->real_escape_string($_REQUEST["player"]);
+
+	$result = query($mysqli, "
+		SELECT gameid,
+			SUM(GREATEST(updated - began, 0)) AS seconds,
+			COUNT(*) AS sessions,
+			MAX(updated) AS lastPlayed
+		FROM (
+			SELECT gameid, began, updated FROM gl_history  WHERE player='$player'
+			UNION ALL
+			SELECT gameid, began, updated FROM gl_playing WHERE player='$player'
+		) sessions
+		GROUP BY gameid
+		ORDER BY seconds DESC");
+
+	$stats = array();
+	while ($row = $result->fetch_array(MYSQLI_ASSOC)) {
+		array_push($stats, array(
+			"gameid"     => intval($row["gameid"]),
+			"seconds"    => intval($row["seconds"]),
+			"sessions"   => intval($row["sessions"]),
+			"lastPlayed" => intval($row["lastPlayed"])));
+	}
+
+	header("Content-Type: application/json");
+	echo json_encode($stats);
 }
 
 function updateAPM($mysqli) {

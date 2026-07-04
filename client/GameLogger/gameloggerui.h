@@ -33,6 +33,7 @@ private slots:
 
     void settingsReady(Settings * settings);
     void logsUpdated(int apm, Session * session);
+    void statsUpdated(QList<GameStat> stats);
 
     void refreshLog();
 
@@ -41,6 +42,10 @@ private:
     Ui::GameLoggerUI *ui;
 
     GameLogger * gameLogger;
+
+    // Kept from settingsReady() so incoming stats (keyed by game id) can be
+    // resolved to game names and logos. Not owned.
+    Settings * settings;
 
     void createTrayIcon();        
 
